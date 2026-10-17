@@ -99,7 +99,7 @@ What is covered: earnings maths and the weekly window, low-pay detection, input 
 - All input is validated with Pydantic (types, ranges, lengths). Documents are capped at 6,000 characters and request bodies at 64 KB.
 - Database access is parameterised, and every query is scoped to the caller's device id.
 - No accounts. A random id in the browser separates one user's data from another's. Anyone who has that id can read that data, so it is not strong authentication. Add real login before storing anything more sensitive.
-- AI endpoints are rate limited per device and across the server.
+- AI endpoints are rate limited per IP address, per device and across the server, so making up new device ids does not get around the limit. Behind a proxy the address the proxy added is used; set `TRUST_FORWARDED_FOR=false` if the app is exposed directly.
 - Errors shown to users never include stack traces, keys or provider messages.
 - Pasted documents and complaint details are sent to Google Gemini and are not stored by this app. Saved complaint drafts stay in the browser.
 - Security headers include a content security policy, `nosniff` and frame blocking.
@@ -129,6 +129,17 @@ gcloud run deploy gigsaathi --source . --region asia-south1 --allow-unauthentica
 - Voice input depends on the browser. It works best in Chrome-based browsers and is hidden where unsupported. Support for some Indian languages is limited.
 - The scheme file holds six entries. Only the facts listed as verified were checked against a source; everything else is labelled as unverified. It is not a complete directory of schemes, and the rules change.
 - Only one device id per browser: clearing browser data means losing access to saved earnings.
+
+## Where this goes next
+
+The web app covers earnings tracking, document help, complaint drafting, scheme lookup and safety information. To reach workers who do not use websites, the plan is:
+
+1. **WhatsApp bot with voice notes.** Most gig workers already use WhatsApp, so this is the biggest step.
+2. **Phone-number login and a permanent database** (for example Postgres), so data survives a lost phone or a server restart.
+3. **Reviewed scheme data.** A person re-checks each scheme against its official page on a schedule and the app shows the date.
+4. **Earnings from screenshots**, so workers do not have to type every entry.
+5. **More languages for the interface**, spoken replies, and offline use for weak mobile data.
+6. **A data-protection review** (consent, delete-my-data, India's DPDP Act) before handling real users' data.
 
 ## AI usage disclosure
 

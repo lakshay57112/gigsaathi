@@ -47,14 +47,18 @@ def settings(tmp_path: Path) -> Settings:
 def make_client(settings: Settings) -> Callable[..., TestClient]:
     """Build a client whose AI provider answers with `handler` (or is unconfigured)."""
 
-    def build(handler: Handler | None = None, configured: bool = True) -> TestClient:
+    def build(handler: Handler | None = None, configured: bool = True, **overrides: object) -> TestClient:
         active = settings if configured else settings.model_copy(update={"gemini_api_key": ""})
+        if overrides:
+            active = active.model_copy(update=overrides)
         app = create_app(active)
         transport = httpx.MockTransport(handler or (lambda request: gemini_text("ok")))
         ai = AIService(active, transport=transport)
         app.dependency_overrides[deps.get_ai_service] = lambda: ai
         device = SlidingWindowLimiter(active.ai_rate_limit_per_minute)
         app.dependency_overrides[deps.get_device_limiter] = lambda: device
+        by_ip = SlidingWindowLimiter(active.ai_ip_rate_limit_per_minute)
+        app.dependency_overrides[deps.get_ip_limiter] = lambda: by_ip
         overall = SlidingWindowLimiter(active.ai_global_rate_limit_per_minute)
         app.dependency_overrides[deps.get_global_limiter] = lambda: overall
         client = TestClient(app, headers={"X-Device-Id": DEVICE})

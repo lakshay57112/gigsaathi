@@ -25,7 +25,9 @@ class Settings(BaseSettings):
 
     # Rate limits protect the AI key from abuse.
     ai_rate_limit_per_minute: int = 10
+    ai_ip_rate_limit_per_minute: int = 20
     ai_global_rate_limit_per_minute: int = 120
+    trust_forwarded_for: bool = True  # set false if the app is exposed without a proxy
 
     max_request_bytes: int = 65_536
     static_dir: str = str(PROJECT_DIR / "frontend" / "dist")

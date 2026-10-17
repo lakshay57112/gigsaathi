@@ -7,7 +7,7 @@ from datetime import date, datetime
 from functools import lru_cache
 from zoneinfo import ZoneInfo
 
-from fastapi import Depends, Header, HTTPException
+from fastapi import Depends, Header, HTTPException, Request
 
 from .config import Settings, get_settings
 from .database import connection_scope
@@ -47,17 +47,38 @@ def get_device_limiter() -> SlidingWindowLimiter:
 
 
 @lru_cache
+def get_ip_limiter() -> SlidingWindowLimiter:
+    return SlidingWindowLimiter(get_settings().ai_ip_rate_limit_per_minute)
+
+
+def client_ip(request: Request, settings: Settings = Depends(get_settings)) -> str:
+    """Caller address. Behind a trusted proxy the last X-Forwarded-For entry is the one
+    the proxy itself added, so it cannot be forged by the client."""
+    if settings.trust_forwarded_for:
+        forwarded = request.headers.get("x-forwarded-for", "")
+        last = forwarded.split(",")[-1].strip()
+        if last:
+            return last
+    return request.client.host if request.client else "unknown"
+
+
+@lru_cache
 def get_global_limiter() -> SlidingWindowLimiter:
     return SlidingWindowLimiter(get_settings().ai_global_rate_limit_per_minute)
 
 
 def rate_limit_ai(
     device_id: str = Depends(get_device_id),
+    ip: str = Depends(client_ip),
+    ip_limiter: SlidingWindowLimiter = Depends(get_ip_limiter),
     device_limiter: SlidingWindowLimiter = Depends(get_device_limiter),
     global_limiter: SlidingWindowLimiter = Depends(get_global_limiter),
 ) -> None:
-    """Limit AI calls per device and across the whole server, to protect the API key."""
-    wait = device_limiter.check(device_id) or global_limiter.check("all")
+    """Limit AI calls per IP, per device and across the server, to protect the API key.
+
+    The IP check comes first so one noisy address cannot use up the shared quota, and
+    inventing new device ids does not get around it."""
+    wait = ip_limiter.check(ip) or device_limiter.check(device_id) or global_limiter.check("all")
     if wait:
         raise HTTPException(
             status_code=429,

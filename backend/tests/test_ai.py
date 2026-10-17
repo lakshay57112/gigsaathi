@@ -216,6 +216,28 @@ def test_ai_endpoints_are_rate_limited_per_device(make_client):
     assert other.status_code == 200
 
 
+def test_new_device_ids_do_not_get_around_the_ip_limit(make_client):
+    client = make_client(ai_ip_rate_limit_per_minute=3)
+    codes = [
+        client.post(
+            "/api/assistant/chat",
+            json={"message": "hi"},
+            headers={"X-Device-Id": f"device-{i:016d}"},
+        ).status_code
+        for i in range(5)
+    ]
+    assert codes == [200, 200, 200, 429, 429]
+
+
+def test_forwarded_for_uses_the_address_added_by_the_proxy(make_client):
+    client = make_client(ai_ip_rate_limit_per_minute=1)
+    spoofed = {"X-Forwarded-For": "1.1.1.1, 9.9.9.9"}
+    assert client.post("/api/assistant/chat", json={"message": "hi"}, headers=spoofed).status_code == 200
+    # the client only changed the first entry, so it is still the same caller
+    again = {"X-Forwarded-For": "2.2.2.2, 9.9.9.9"}
+    assert client.post("/api/assistant/chat", json={"message": "hi"}, headers=again).status_code == 429
+
+
 def test_reference_explanations_are_cached(make_client):
     calls = []
 
