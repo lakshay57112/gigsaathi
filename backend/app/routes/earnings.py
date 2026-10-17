@@ -5,6 +5,7 @@ from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 
+from ..config import Settings, get_settings
 from ..deps import get_db, get_device_id, get_today
 from ..schemas import EarningsIn, EarningsOut, SummaryOut
 from ..services import earnings_repo
@@ -27,8 +28,14 @@ def add_earnings(
     db: sqlite3.Connection = Depends(get_db),
     device_id: str = Depends(get_device_id),
     today: date = Depends(get_today),
+    settings: Settings = Depends(get_settings),
 ) -> EarningsOut:
     validate_entry_date(entry.entry_date, today)
+    if earnings_repo.count_entries(db, device_id) >= settings.max_entries_per_device:
+        raise HTTPException(
+            status_code=409,
+            detail="You have reached the limit of saved entries. Delete old ones to add more.",
+        )
     return earnings_repo.add_entry(db, device_id, entry)
 
 

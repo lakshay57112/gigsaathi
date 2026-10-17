@@ -25,6 +25,7 @@ SECURITY_HEADERS = {
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
     "Referrer-Policy": "no-referrer",
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
     "Permissions-Policy": "microphone=(self), camera=(), geolocation=()",
     "Content-Security-Policy": CSP,
 }

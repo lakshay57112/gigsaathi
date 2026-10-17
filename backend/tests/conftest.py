@@ -16,8 +16,8 @@ from app.main import create_app  # noqa: E402
 from app.services.ai_service import AIService  # noqa: E402
 from app.services.rate_limit import SlidingWindowLimiter  # noqa: E402
 
-DEVICE = "device-aaaaaaaaaaaaaaaa"
-OTHER_DEVICE = "device-bbbbbbbbbbbbbbbb"
+DEVICE = "3f2b8c1e-9a4d-4e6f-8b1a-7c5d2e9f0a11"
+OTHER_DEVICE = "7d9e4a2b-1c3f-4a8b-9e5d-6f0b2c4a8d33"
 
 Handler = Callable[[httpx.Request], httpx.Response]
 

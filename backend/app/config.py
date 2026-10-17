@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     trust_forwarded_for: bool = True  # set false if the app is exposed without a proxy
 
     max_request_bytes: int = 65_536
+    max_entries_per_device: int = 1000
     static_dir: str = str(PROJECT_DIR / "frontend" / "dist")
     cors_origins: str = ""  # comma-separated; only needed for local frontend dev
 

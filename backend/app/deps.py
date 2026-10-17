@@ -14,7 +14,11 @@ from .database import connection_scope
 from .services.ai_service import AIService
 from .services.rate_limit import SlidingWindowLimiter
 
-_DEVICE_ID = re.compile(r"^[A-Za-z0-9-]{16,64}$")
+# Only random version-4 UUIDs, which is what the app creates. A short or guessable id such as
+# "aaaaaaaaaaaaaaaa" would let someone read another person's entries.
+_DEVICE_ID = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$", re.IGNORECASE
+)
 
 
 def get_db(settings: Settings = Depends(get_settings)) -> Iterator[sqlite3.Connection]:

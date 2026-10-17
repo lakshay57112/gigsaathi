@@ -96,6 +96,7 @@ def test_security_headers_present(client):
     assert response.headers["x-frame-options"] == "DENY"
     assert "default-src 'self'" in response.headers["content-security-policy"]
     assert response.headers["cache-control"] == "no-store"
+    assert "max-age" in response.headers["strict-transport-security"]
 
 
 def test_unexpected_errors_do_not_leak_internals(make_client, monkeypatch):

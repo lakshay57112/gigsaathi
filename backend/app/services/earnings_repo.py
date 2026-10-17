@@ -20,6 +20,10 @@ def _to_out(row: sqlite3.Row) -> EarningsOut:
     )
 
 
+def count_entries(db: sqlite3.Connection, device_id: str) -> int:
+    return db.execute("SELECT COUNT(*) FROM earnings WHERE device_id = ?", (device_id,)).fetchone()[0]
+
+
 def add_entry(db: sqlite3.Connection, device_id: str, entry: EarningsIn) -> EarningsOut:
     cursor = db.execute(
         "INSERT INTO earnings (device_id, entry_date, gross, hours, expenses, note) "

@@ -98,11 +98,13 @@ What is covered: earnings maths and the weekly window, low-pay detection, input 
 - API key lives in environment variables and is sent in a request header, never in a URL. `.env` is git-ignored.
 - All input is validated with Pydantic (types, ranges, lengths). Documents are capped at 6,000 characters and request bodies at 64 KB.
 - Database access is parameterised, and every query is scoped to the caller's device id.
-- No accounts. A random id in the browser separates one user's data from another's. Anyone who has that id can read that data, so it is not strong authentication. Add real login before storing anything more sensitive.
+- No accounts. A random UUID in the browser separates one user's data from another's, and the server only accepts real version-4 UUIDs, so ids cannot be guessed or chosen by hand. Anyone who has someone's id can still read that data, so this is not strong authentication. Add real login (for example phone-number OTP) before storing anything more sensitive.
 - AI endpoints are rate limited per IP address, per device and across the server, so making up new device ids does not get around the limit. Behind a proxy the address the proxy added is used; set `TRUST_FORWARDED_FOR=false` if the app is exposed directly.
 - Errors shown to users never include stack traces, keys or provider messages.
 - Pasted documents and complaint details are sent to Google Gemini and are not stored by this app. Saved complaint drafts stay in the browser.
-- Security headers include a content security policy, `nosniff` and frame blocking.
+- Each device can keep at most 1,000 earnings entries (`MAX_ENTRIES_PER_DEVICE`), so one visitor cannot fill the disk.
+- Security headers include a content security policy, HSTS, `nosniff` and frame blocking.
+- Dependencies were checked with `pip-audit` and `npm audit` and show no known vulnerabilities.
 - Document text is wrapped and treated as data in the prompt to resist prompt injection. This reduces the risk but cannot remove it.
 
 ## Accessibility

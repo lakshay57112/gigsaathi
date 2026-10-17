@@ -68,6 +68,27 @@ def test_device_header_is_required_and_checked(client):
     assert client.get("/api/earnings", headers={"X-Device-Id": "x" * 16 + "'; DROP TABLE"}).status_code == 400
 
 
+def test_guessable_device_ids_are_rejected(client):
+    for weak in ("aaaaaaaaaaaaaaaa", "device-aaaaaaaaaaaaaaaa", "00000000-0000-0000-0000-000000000000", "1" * 36):
+        assert client.get("/api/earnings", headers={"X-Device-Id": weak}).status_code == 400, weak
+
+
+def test_entries_per_device_are_capped(make_client):
+    client = make_client(max_entries_per_device=2)
+    assert client.post("/api/earnings", json=entry()).status_code == 201
+    assert client.post("/api/earnings", json=entry()).status_code == 201
+    full = client.post("/api/earnings", json=entry())
+    assert full.status_code == 409
+    assert "limit" in full.json()["detail"].lower()
+    # another device has its own allowance
+    other = client.post("/api/earnings", json=entry(), headers={"X-Device-Id": OTHER_DEVICE})
+    assert other.status_code == 201
+    # deleting frees space
+    first_id = client.get("/api/earnings").json()[0]["id"]
+    assert client.delete(f"/api/earnings/{first_id}").status_code == 204
+    assert client.post("/api/earnings", json=entry()).status_code == 201
+
+
 def test_one_device_cannot_see_or_delete_anothers_data(client):
     created = client.post("/api/earnings", json=entry()).json()
     other = {"X-Device-Id": OTHER_DEVICE}

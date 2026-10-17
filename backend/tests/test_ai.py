@@ -212,7 +212,7 @@ def test_ai_endpoints_are_rate_limited_per_device(make_client):
     limited = client.post("/api/assistant/chat", json={"message": "hi"})
     assert "Retry-After" in limited.headers
     # a different device is not affected
-    other = client.post("/api/assistant/chat", json={"message": "hi"}, headers={"X-Device-Id": "device-cccccccccccccccc"})
+    other = client.post("/api/assistant/chat", json={"message": "hi"}, headers={"X-Device-Id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"})
     assert other.status_code == 200
 
 
@@ -222,7 +222,7 @@ def test_new_device_ids_do_not_get_around_the_ip_limit(make_client):
         client.post(
             "/api/assistant/chat",
             json={"message": "hi"},
-            headers={"X-Device-Id": f"device-{i:016d}"},
+            headers={"X-Device-Id": f"00000000-0000-4000-8000-{i:012d}"},
         ).status_code
         for i in range(5)
     ]
