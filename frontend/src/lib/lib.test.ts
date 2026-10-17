@@ -4,7 +4,7 @@ import { deleteDraft, loadDrafts, MAX_DRAFTS, saveDraft } from "./drafts";
 import { formatINR, formatShortDate, localISODate } from "./format";
 import { englishKeys, hindiKeys, translate } from "./i18n";
 import { buildGrievancePrefill, buildPayoutPrefill, guessIssueType, parseAmount, parseIncidentDate, payoutNeedsComplaint } from "./prefill";
-import { LANGUAGE_KEY, needsLanguageChoice, readStoredLanguage } from "./languagePref";
+import { LANGUAGE_KEY, needsLanguageChoice, readStoredLanguage, shouldAskLanguage } from "./languagePref";
 import { buildWhatsAppUrl } from "./share";
 import { parseHash } from "./route";
 import { addDays, formatMonth, PERIODS, periodRange } from "./statementPeriod";
@@ -312,5 +312,17 @@ describe("payout complaint", () => {
   it("does not mention the totals when the slip adds up", () => {
     const description = buildPayoutPrefill({ ...base, adds_up: true, difference: 0 }).description;
     expect(description).not.toContain("I expected");
+  });
+});
+
+describe("when the language screen is shown", () => {
+  const stored = { getItem: () => "ta", setItem: () => undefined };
+  it("asks on every load when set to, even after a language was saved", () => {
+    expect(shouldAskLanguage(stored, true)).toBe(true);
+    expect(shouldAskLanguage(null, true)).toBe(true);
+  });
+  it("can be switched back to asking only once", () => {
+    expect(shouldAskLanguage(stored, false)).toBe(false);
+    expect(shouldAskLanguage({ getItem: () => null, setItem: () => undefined }, false)).toBe(true);
   });
 });

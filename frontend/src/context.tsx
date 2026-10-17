@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { api } from "./lib/api";
 import { translate, type TextKey } from "./lib/i18n";
-import { browserStorage, LANGUAGE_KEY, needsLanguageChoice, readStoredLanguage } from "./lib/languagePref";
+import { browserStorage, LANGUAGE_KEY, readStoredLanguage, shouldAskLanguage } from "./lib/languagePref";
 import type { Meta } from "./lib/types";
 
 interface AppState {
@@ -24,7 +24,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [meta, setMeta] = useState<Meta | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [language, setLanguageState] = useState(readLanguage);
-  const [needsLanguage, setNeedsLanguage] = useState(() => needsLanguageChoice(browserStorage()));
+  const [needsLanguage, setNeedsLanguage] = useState(() => shouldAskLanguage(browserStorage()));
 
   useEffect(() => {
     api.getMeta().then(setMeta, (e: Error) => setError(e.message));

@@ -1,11 +1,14 @@
 import { useEffect, useRef } from "react";
 import { useApp } from "../context";
+import { browserStorage, readStoredLanguage } from "../lib/languagePref";
 
 // Shown once, on the first visit. Each language is written in its own script, so a worker
 // can find theirs without reading English. The heading is fixed text, not translated, because
 // nobody has chosen a language yet.
 export function LanguageWelcome() {
   const { meta, setLanguage } = useApp();
+  const savedCode = readStoredLanguage(browserStorage());
+  const saved = meta.languages.find((l) => l.code === savedCode);
   const heading = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
@@ -30,6 +33,16 @@ export function LanguageWelcome() {
       <p className="mt-3 text-neutral-700">
         Answers will come in this language. You can change it any time.
       </p>
+      {saved && (
+        <button
+          type="button"
+          lang={saved.code}
+          onClick={() => setLanguage(saved.code)}
+          className="mt-6 min-h-14 w-full rounded-xl bg-green-700 px-4 py-3 text-lg font-semibold text-white hover:bg-green-800"
+        >
+          Continue · {saved.native}
+        </button>
+      )}
       <ul className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
         {meta.languages.map((l) => (
           <li key={l.code}>
@@ -37,7 +50,9 @@ export function LanguageWelcome() {
               type="button"
               lang={l.code}
               onClick={() => setLanguage(l.code)}
-              className="flex min-h-16 w-full flex-col items-start justify-center rounded-xl border border-neutral-300 bg-white px-4 py-2 text-left hover:border-green-700 hover:bg-green-50"
+              className={`flex min-h-16 w-full flex-col items-start justify-center rounded-xl border px-4 py-2 text-left hover:border-green-700 hover:bg-green-50 ${
+                l.code === savedCode ? "border-green-700 bg-green-50" : "border-neutral-300 bg-white"
+              }`}
             >
               <span className="text-lg font-semibold">{l.native}</span>
               {l.native !== l.name && (

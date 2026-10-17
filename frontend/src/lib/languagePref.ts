@@ -2,6 +2,12 @@
 
 export const LANGUAGE_KEY = "gs.language";
 
+/**
+ * Show the language screen on every page load, not just the first visit. A returning worker
+ * gets a one-tap "Continue" button for their saved language. Set to false to ask only once.
+ */
+export const ASK_EVERY_VISIT = true;
+
 type ReadableStorage = Pick<Storage, "getItem">;
 
 /** The saved language code, or null when nothing is saved (or storage is blocked). */
@@ -26,6 +32,13 @@ export function needsLanguageChoice(storage: Pick<Storage, "getItem" | "setItem"
     return false;
   }
   return readStoredLanguage(storage) === null;
+}
+
+export function shouldAskLanguage(
+  storage: Pick<Storage, "getItem" | "setItem"> | null,
+  everyVisit: boolean = ASK_EVERY_VISIT,
+): boolean {
+  return everyVisit ? true : needsLanguageChoice(storage);
 }
 
 export function browserStorage(): Storage | null {
