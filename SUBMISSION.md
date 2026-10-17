@@ -6,9 +6,9 @@ Fill in the three links once they exist. Nothing below has been invented.
 
 | # | Requirement | Status | Evidence |
 |---|---|---|---|
-| 1 | GitHub repository link submitted | **TODO** | Create the repo, push this folder, paste the URL here: `____` |
-| 2 | Repository is public | **TODO** | GitHub → Settings → Danger Zone → Change visibility → Public. Check by opening the URL in a private window. |
-| 3 | Deployed project link submitted | **TODO** | Deploy (see README, Deployment), open the URL, run the demo flow below, paste URL: `____` |
+| 1 | GitHub repository link submitted | Done | https://github.com/lakshay57112/gigsaathi |
+| 2 | Repository is public | Done | Opens without logging in. |
+| 3 | Deployed project link submitted | Done | https://gigsaathi-dkku.onrender.com/ |
 | 4 | Project description | Done | Text below |
 | 5 | GenAI services and where they are used | Done | Text below |
 | 6 | Demo video link | **TODO** | Record using the script below, paste URL: `____` |
