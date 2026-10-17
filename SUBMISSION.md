@@ -11,7 +11,7 @@ Fill in the three links once they exist. Nothing below has been invented.
 | 3 | Deployed project link submitted | Done | https://gigsaathi-dkku.onrender.com/ |
 | 4 | Project description | Done | Text below |
 | 5 | GenAI services and where they are used | Done | Text below |
-| 6 | Demo video link | **TODO** | Record using the script below, paste URL: `____` |
+| 6 | Demo video link | https://youtu.be/R-kg-LY9Dug |
 
 Before submitting, add your `GEMINI_API_KEY` on the host and test all five AI flows with the real key. The automated tests fake the AI provider, so a live run is the only proof it works end to end.
 
