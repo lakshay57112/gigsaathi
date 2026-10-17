@@ -10,7 +10,9 @@ from ..schemas import (
     DocumentRequest,
     GrievanceRequest,
     GrievanceResponse,
+    PayoutCheck,
 )
+from ..services import payout_service
 from ..services.ai_service import AIService
 
 router = APIRouter(prefix="/api", tags=["documents"], dependencies=[Depends(rate_limit_ai)])
@@ -22,6 +24,15 @@ async def explain_document(
 ) -> DocumentExplanation:
     # The pasted text is sent to the AI provider and returned; it is never saved or logged.
     return await ai.explain_document(text=payload.text, language=payload.language)
+
+
+@router.post("/documents/payout-check", response_model=PayoutCheck)
+async def check_payout_slip(
+    payload: DocumentRequest, ai: AIService = Depends(get_ai_service)
+) -> PayoutCheck:
+    """The model reads the slip; the sums are checked in code. Nothing is stored."""
+    extraction = await ai.read_payout_slip(text=payload.text, language=payload.language)
+    return payout_service.check_payout(extraction)
 
 
 def _missing_details(request: GrievanceRequest) -> list[str]:

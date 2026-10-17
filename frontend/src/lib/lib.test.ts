@@ -3,12 +3,14 @@ import { parseErrorBody } from "./api";
 import { deleteDraft, loadDrafts, MAX_DRAFTS, saveDraft } from "./drafts";
 import { formatINR, formatShortDate, localISODate } from "./format";
 import { englishKeys, hindiKeys, translate } from "./i18n";
-import { buildGrievancePrefill, guessIssueType, parseAmount, parseIncidentDate } from "./prefill";
+import { buildGrievancePrefill, buildPayoutPrefill, guessIssueType, parseAmount, parseIncidentDate, payoutNeedsComplaint } from "./prefill";
 import { LANGUAGE_KEY, needsLanguageChoice, readStoredLanguage } from "./languagePref";
+import { buildWhatsAppUrl } from "./share";
 import { parseHash } from "./route";
+import { addDays, formatMonth, PERIODS, periodRange } from "./statementPeriod";
 import { buildWeeklySummary } from "./summary";
 import { cleanAiText } from "./text";
-import type { DocumentExplanation, Summary } from "./types";
+import type { DocumentExplanation, PayoutCheck, Summary } from "./types";
 import { validateEarnings, type EarningsForm } from "./validation";
 
 const TODAY = "2026-10-17";
@@ -227,5 +229,88 @@ describe("language choice", () => {
     expect(needsLanguageChoice(blocked)).toBe(false);
     expect(needsLanguageChoice(null)).toBe(false);
     expect(readStoredLanguage(blocked)).toBeNull();
+  });
+});
+
+describe("statement periods", () => {
+  it("covers exactly the chosen number of days, ending today", () => {
+    expect(periodRange(30, "2026-10-17")).toEqual({ start: "2026-09-18", end: "2026-10-17" });
+    expect(periodRange(1, "2026-10-17")).toEqual({ start: "2026-10-17", end: "2026-10-17" });
+  });
+
+  it("handles month and year boundaries and leap years", () => {
+    expect(addDays("2026-03-01", -1)).toBe("2026-02-28");
+    expect(addDays("2028-03-01", -1)).toBe("2028-02-29");
+    expect(addDays("2026-01-01", -1)).toBe("2025-12-31");
+    expect(periodRange(365, "2026-10-17").start).toBe("2025-10-18");
+  });
+
+  it("never asks for more than the server allows (a year)", () => {
+    for (const p of PERIODS) expect(p.days).toBeLessThanOrEqual(366);
+  });
+
+  it("formats month keys for display", () => {
+    expect(formatMonth("2026-10")).toBe("October 2026");
+    expect(formatMonth("bad")).toBe("bad");
+  });
+});
+
+describe("whatsapp share", () => {
+  it("builds a link carrying the encoded text", () => {
+    const url = buildWhatsAppUrl("Payment not received\n\nHello & thanks");
+    expect(url).toBe("https://wa.me/?text=" + encodeURIComponent("Payment not received\n\nHello & thanks"));
+    expect(url).not.toContain(" ");
+  });
+
+  it("returns null for empty or too-long text so the caller can copy instead", () => {
+    expect(buildWhatsAppUrl("   ")).toBeNull();
+    expect(buildWhatsAppUrl("a".repeat(5000))).toBeNull();
+    expect(buildWhatsAppUrl("अ".repeat(500))).toBeNull(); // Hindi letters expand when encoded
+    expect(buildWhatsAppUrl("a".repeat(1500))).not.toBeNull();
+  });
+});
+
+describe("payout complaint", () => {
+  const base: PayoutCheck = {
+    summary: "Weekly payout.",
+    period: "3-9 Oct",
+    platform_name: "FastRide",
+    total_earned: 5000,
+    paid_out: 3500,
+    deductions: [
+      { label: "Platform fee", amount: 500, plain_meaning: "", ask_about: false, reason: "", duplicate: false },
+      { label: "Penalty", amount: 300, plain_meaning: "", ask_about: true, reason: "", duplicate: false },
+      { label: "Misc adjustment", amount: 200, plain_meaning: "", ask_about: false, reason: "", duplicate: true },
+    ],
+    deductions_total: 1000,
+    expected_payout: 4000,
+    difference: -500,
+    adds_up: false,
+    questions_to_ask: [],
+    warnings: [],
+  };
+
+  it("uses only facts from the slip and lists just the lines worth asking about", () => {
+    const prefill = buildPayoutPrefill(base);
+    expect(prefill.issue_type).toBe("unfair_deduction");
+    expect(prefill.platform).toBe("FastRide");
+    expect(prefill.amount).toBe("500");
+    expect(prefill.description).toContain("Penalty (₹300)");
+    expect(prefill.description).toContain("Misc adjustment (₹200)");
+    expect(prefill.description).not.toContain("Platform fee");
+    expect(prefill.description).toContain("I expected ₹4,000, but I was paid ₹3,500");
+  });
+
+  it("offers a complaint only when something is flagged or the slip does not add up", () => {
+    expect(payoutNeedsComplaint(base)).toBe(true);
+    const clean = { ...base, adds_up: true, deductions: [base.deductions[0]!] };
+    expect(payoutNeedsComplaint(clean)).toBe(false);
+    expect(payoutNeedsComplaint({ ...clean, adds_up: null })).toBe(false);
+    expect(payoutNeedsComplaint({ ...clean, adds_up: false })).toBe(true);
+  });
+
+  it("does not mention the totals when the slip adds up", () => {
+    const description = buildPayoutPrefill({ ...base, adds_up: true, difference: 0 }).description;
+    expect(description).not.toContain("I expected");
   });
 });

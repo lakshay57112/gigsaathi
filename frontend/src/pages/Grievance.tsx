@@ -7,6 +7,7 @@ import { deleteDraft, loadDrafts, saveDraft, type SavedDraft } from "../lib/draf
 import { formatLongDate, localISODate } from "../lib/format";
 import type { TextKey } from "../lib/i18n";
 import { takePrefill } from "../lib/prefill";
+import { shareComplaint } from "../lib/share";
 import { copyText } from "../lib/text";
 import type { GrievanceInput, GrievanceResult, IssueType, Tone } from "../lib/types";
 
@@ -108,6 +109,18 @@ export default function Grievance() {
     setNotice((await copyText(`${subject}\n\n${body}`)) ? t("copied") : "Copy failed. Please select the text and copy it yourself.");
   }
 
+  async function share() {
+    const outcome = await shareComplaint(subject, body);
+    if (outcome === "too-long") {
+      const copied = await copyText(`${subject}\n\n${body}`);
+      setNotice(copied ? t("gr_shareTooLong") : "Copy failed. Please select the text and copy it yourself.");
+    } else if (outcome === "whatsapp") {
+      setNotice(t("gr_shareOpened"));
+    } else {
+      setNotice("");
+    }
+  }
+
   function save() {
     setSaved(saveDraft({ platform: form.platform.trim(), subject, body }));
     setNotice(t("gr_saved"));
@@ -179,6 +192,9 @@ export default function Grievance() {
             <p className="mt-3 text-sm text-neutral-700">{t("gr_review")}</p>
             <div className="mt-4 flex flex-wrap gap-3">
               <Button onClick={() => void copy()}>{t("copy")}</Button>
+              <Button variant="secondary" onClick={() => void share()}>
+                {t("gr_share")}
+              </Button>
               <Button variant="secondary" onClick={() => void generate()}>
                 {t("gr_regenerate")}
               </Button>

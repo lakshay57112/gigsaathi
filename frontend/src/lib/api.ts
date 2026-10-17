@@ -8,8 +8,10 @@ import type {
   GrievanceInput,
   GrievanceResult,
   Meta,
+  PayoutCheck,
   SafetyContent,
   SchemeResult,
+  Statement,
   Summary,
 } from "./types";
 
@@ -76,6 +78,8 @@ const post = <T>(path: string, body: unknown) =>
 export const api = {
   getMeta: () => request<Meta>("/meta"),
   getSummary: () => request<Summary>("/summary"),
+  getStatement: (start: string, end: string) =>
+    request<Statement>(`/statement?start=${start}&end=${end}`),
   listEarnings: () => request<EarningsEntry[]>("/earnings?limit=30"),
   addEarnings: (entry: EarningsInput) => post<EarningsEntry>("/earnings", entry),
   deleteEarnings: (id: number) => request<void>(`/earnings/${id}`, { method: "DELETE" }),
@@ -93,5 +97,7 @@ export const api = {
     post<{ text: string }>("/schemes/explain", { occupation, state, language }),
   explainDocument: (text: string, language: string) =>
     post<DocumentExplanation>("/documents/explain", { text, language }),
+  checkPayout: (text: string, language: string) =>
+    post<PayoutCheck>("/documents/payout-check", { text, language }),
   draftGrievance: (input: GrievanceInput) => post<GrievanceResult>("/grievance/draft", input),
 };

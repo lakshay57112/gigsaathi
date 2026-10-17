@@ -8,11 +8,13 @@ import DocumentHelp from "./pages/DocumentHelp";
 import Earnings from "./pages/Earnings";
 import Grievance from "./pages/Grievance";
 import SafetyWelfare from "./pages/SafetyWelfare";
+import Statement from "./pages/Statement";
 import Settings from "./pages/Settings";
 
 const PAGES: Record<string, () => React.JSX.Element> = {
   "/": Dashboard,
   "/earnings": Earnings,
+  "/statement": Statement,
   "/assistant": Assistant,
   "/safety": SafetyWelfare,
   "/documents": DocumentHelp,
@@ -118,18 +120,18 @@ export default function App() {
           e.preventDefault();
           mainRef.current?.focus();
         }}
-        className="sr-only z-50 rounded-lg bg-white px-4 py-2 font-medium text-neutral-900 focus:not-sr-only focus:fixed focus:left-3 focus:top-3"
+        className="sr-only z-50 print:hidden rounded-lg bg-white px-4 py-2 font-medium text-neutral-900 focus:not-sr-only focus:fixed focus:left-3 focus:top-3"
       >
         {t("skip")}
       </a>
 
-      <aside className="on-dark sticky top-0 hidden h-dvh w-64 shrink-0 flex-col gap-8 bg-neutral-950 p-5 md:flex">
+      <aside className="on-dark sticky top-0 hidden h-dvh w-64 shrink-0 flex-col gap-8 bg-neutral-950 p-5 md:flex print:hidden">
         <Brand />
         <Nav route={route} />
       </aside>
 
       <div className="min-w-0 flex-1">
-        <header className="on-dark bg-neutral-950 md:hidden">
+        <header className="on-dark bg-neutral-950 md:hidden print:hidden">
           <div className="flex items-center justify-between px-4 py-3">
             <Brand />
             <button
@@ -147,7 +149,7 @@ export default function App() {
           </div>
         </header>
 
-        <div className="flex justify-end border-b border-neutral-200 px-4 py-2 md:px-8">
+        <div className="flex justify-end border-b border-neutral-200 px-4 py-2 md:px-8 print:hidden">
           <LanguagePicker />
         </div>
 
@@ -155,7 +157,7 @@ export default function App() {
           id="main"
           ref={mainRef}
           tabIndex={-1}
-          className="mx-auto w-full max-w-3xl px-4 py-6 focus:outline-none md:px-8 md:py-10"
+          className="mx-auto w-full max-w-3xl px-4 py-6 focus:outline-none md:px-8 md:py-10 print:max-w-none print:p-0"
         >
           <Page key={route} />
         </main>

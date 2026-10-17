@@ -13,7 +13,9 @@ Built for the PromptWars warm-up challenge, *Gig Worker Companion*. The product 
 | **Safety** | Short, practical guidance for night work, road safety, emergencies and difficult situations. A call card with 112, 100, 108 and 1091 opens your phone's dialer. The app says clearly that it cannot call anyone itself. |
 | **Welfare schemes** | Pick your work and state. Results come from a reviewed reference file, not from the model, and each one shows its source, last-checked date and a verified / partly verified / not verified label. |
 | **Document help** | Paste a notice or message. You get a simple explanation, key dates, amounts and next steps. One click turns it into a complaint draft. |
-| **Grievance drafts** | A guided form produces a subject and letter in your language and tone. Missing facts appear as `[ADD: ...]` placeholders. Edit, copy, regenerate and save drafts on your device. |
+| **Payout check** | Paste a payout slip. The AI reads it and lists each deduction in simple words, marking lines worth asking about. The sums (earned minus deductions against what was paid) are worked out in code, not by the model. A repeated deduction is always flagged. One click turns the flagged lines into a complaint draft. |
+| **Proof of income** | A one-page statement of your saved earnings for the last 30 days, 90 days, 6 months or a year: totals, a month-by-month table and every entry. Print it or save it as a PDF. It says clearly that the figures are self-reported and not checked by anyone. |
+| **Grievance drafts** | A guided form produces a subject and letter in your language and tone. Missing facts appear as `[ADD: ...]` placeholders. Edit, copy, regenerate and save drafts on your device. A **Share on WhatsApp** button opens WhatsApp with the text ready; very long drafts fall back to the phone's share sheet or are copied. |
 
 ### Where Generative AI is used
 
@@ -21,10 +23,11 @@ Built for the PromptWars warm-up challenge, *Gig Worker Companion*. The product 
 |---|---|---|
 | Assistant | Understands the question, calls tools, writes the answer | Make up earnings or schemes |
 | Document help | Explains pasted text, extracts dates and amounts | Store the text |
+| Payout check | Reads the slip and explains each line | Do the arithmetic (code does), accuse the platform, or invent amounts |
 | Grievance | Writes the letter from the facts supplied | Add facts, dates or evidence |
 | Weekly summary, safety, schemes | Re-words stored data in the chosen language | Change the data |
 
-Earnings tracking, the scheme lookup and the safety content work without AI.
+Earnings tracking, the proof-of-income statement, the scheme lookup and the safety content work without AI.
 
 ## Tech stack
 
@@ -82,12 +85,12 @@ For a single-server run, build the frontend (`npm run build` in `frontend/`) and
 ## Tests
 
 ```bash
-cd backend  && pip install -r requirements-dev.txt && pytest     # 59 tests
-cd frontend && npm test                                          # 24 tests
+cd backend  && pip install -r requirements-dev.txt && pytest     # 77 tests
+cd frontend && npm test                                          # 36 tests
 cd frontend && npm run typecheck
 ```
 
-Last run: backend **59 passed**, frontend **24 passed**, TypeScript clean, `npm audit` (production) found 0 vulnerabilities.
+Last run: backend **77 passed**, frontend **36 passed**, TypeScript clean, `pip-audit` and `npm audit` found no known vulnerabilities.
 
 The backend tests never call the real Gemini API. They replace the HTTP transport, so they check what this app sends and how it handles replies, outages, rate limits, blocked answers and malformed JSON. They do not prove how Gemini itself answers, so test the AI features with your own key before you demo.
 

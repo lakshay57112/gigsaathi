@@ -7,12 +7,13 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response
 
 from ..config import Settings, get_settings
 from ..deps import get_db, get_device_id, get_today
-from ..schemas import EarningsIn, EarningsOut, SummaryOut
-from ..services import earnings_repo
+from ..schemas import EarningsIn, EarningsOut, StatementOut, SummaryOut
+from ..services import earnings_repo, earnings_service
 
 router = APIRouter(prefix="/api", tags=["earnings"])
 
 MAX_PAST_DAYS = 366
+MAX_STATEMENT_DAYS = 366
 
 
 def validate_entry_date(entry_date: date, today: date) -> None:
@@ -75,3 +76,21 @@ def get_summary(
     today: date = Depends(get_today),
 ) -> SummaryOut:
     return earnings_repo.get_summary(db, device_id, today)
+
+
+@router.get("/statement", response_model=StatementOut)
+def get_statement(
+    start: date,
+    end: date,
+    db: sqlite3.Connection = Depends(get_db),
+    device_id: str = Depends(get_device_id),
+    today: date = Depends(get_today),
+) -> StatementOut:
+    if start > end:
+        raise HTTPException(status_code=422, detail="The start date must be before the end date.")
+    if end > today:
+        raise HTTPException(status_code=422, detail="The end date cannot be in the future.")
+    if (end - start).days >= MAX_STATEMENT_DAYS:
+        raise HTTPException(status_code=422, detail="Choose a period of one year or less.")
+    entries = earnings_repo.entries_between(db, device_id, start, end)
+    return earnings_service.build_statement(entries, start, end, today)

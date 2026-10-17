@@ -100,6 +100,27 @@ class SummaryOut(BaseModel):
     week_insights: WeekInsights
 
 
+class MonthRow(BaseModel):
+    month: str  # "2026-10"
+    gross: float
+    expenses: float
+    net: float
+    hours: float
+    days_worked: int
+
+
+class StatementOut(BaseModel):
+    """A worker's own record of earnings for a period. Self-reported, not verified by anyone."""
+
+    start: date
+    end: date
+    generated_on: date
+    totals: Totals
+    days_worked: int
+    months: list[MonthRow]
+    entries: list[EarningsOut]  # oldest first
+
+
 # ---- AI features ----------------------------------------------------------------------
 
 
@@ -149,6 +170,68 @@ class DocumentExplanation(BaseModel):
     action_items: TolerantList = []
     warnings: TolerantList = []
     platform_name: str | None = None
+
+
+def _amount_or_none(value: object) -> object:
+    """Accept a number, or text like "Rs 1,200"; anything else (or a huge value) becomes None."""
+    if value is None or isinstance(value, bool):
+        return None
+    if isinstance(value, (int, float)):
+        number = float(value)
+    else:
+        digits = "".join(ch for ch in str(value) if ch.isdigit() or ch == ".")
+        try:
+            number = float(digits)
+        except ValueError:
+            return None
+    return number if 0 <= number <= MAX_AMOUNT else None
+
+
+OptionalAmount = Annotated[float | None, BeforeValidator(_amount_or_none)]
+
+
+class PayoutLineModel(BaseModel):
+    """One deduction as the model read it from the payout slip."""
+
+    label: str
+    amount: OptionalAmount = None
+    plain_meaning: str = ""  # what this line usually means, in simple words
+    ask_about: bool = False  # true when it has no clear reason, is vague, or is a penalty
+    reason: str = ""  # why it is worth asking about
+
+
+class PayoutExtraction(BaseModel):
+    """Shape the model must return for a payout slip."""
+
+    summary: str
+    period: str | None = None
+    platform_name: str | None = None
+    total_earned: OptionalAmount = None  # before any deduction
+    paid_out: OptionalAmount = None  # what was actually paid
+    deductions: Annotated[list[PayoutLineModel], BeforeValidator(_empty_list_if_none)] = []
+    questions_to_ask: TolerantList = []
+    warnings: TolerantList = []
+
+
+class PayoutLine(PayoutLineModel):
+    duplicate: bool = False  # the same label and amount appears more than once
+
+
+class PayoutCheck(BaseModel):
+    """The slip as read by the model, plus the arithmetic worked out here in code."""
+
+    summary: str
+    period: str | None
+    platform_name: str | None
+    total_earned: float | None
+    paid_out: float | None
+    deductions: list[PayoutLine]
+    deductions_total: float | None  # sum of the deductions that had an amount
+    expected_payout: float | None  # total_earned - deductions_total
+    difference: float | None  # paid_out - expected_payout (negative = paid less than expected)
+    adds_up: bool | None  # None when the slip did not give enough numbers to check
+    questions_to_ask: list[str]
+    warnings: list[str]
 
 
 IssueType = Literal[

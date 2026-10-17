@@ -16,7 +16,7 @@ import httpx
 from pydantic import BaseModel, ValidationError
 
 from ..config import Settings
-from ..schemas import ChatTurn, DocumentExplanation, GrievanceDraft, GrievanceRequest
+from ..schemas import ChatTurn, DocumentExplanation, GrievanceDraft, GrievanceRequest, PayoutExtraction
 from . import prompts
 
 log = logging.getLogger(__name__)
@@ -161,6 +161,15 @@ class AIService:
             json_mode=True,
         )
         return self._parse(await self._generate(body), DocumentExplanation)
+
+    async def read_payout_slip(self, *, text: str, language: str) -> PayoutExtraction:
+        body = self._body(
+            prompts.payout_system(language),
+            [_text_content("user", f"<document>\n{text}\n</document>")],
+            temperature=0.1,
+            json_mode=True,
+        )
+        return self._parse(await self._generate(body), PayoutExtraction)
 
     async def draft_grievance(self, request: GrievanceRequest) -> GrievanceDraft:
         body = self._body(

@@ -152,3 +152,46 @@ export interface SafetyContent {
   };
   sections: { id: string; title: string; tips: string[] }[];
 }
+
+export interface MonthRow {
+  month: string; // "2026-10"
+  gross: number;
+  expenses: number;
+  net: number;
+  hours: number;
+  days_worked: number;
+}
+
+export interface Statement {
+  start: string;
+  end: string;
+  generated_on: string;
+  totals: Totals;
+  days_worked: number;
+  months: MonthRow[];
+  entries: EarningsEntry[];
+}
+
+export interface PayoutLine {
+  label: string;
+  amount: number | null;
+  plain_meaning: string;
+  ask_about: boolean;
+  reason: string;
+  duplicate: boolean;
+}
+
+export interface PayoutCheck {
+  summary: string;
+  period: string | null;
+  platform_name: string | null;
+  total_earned: number | null;
+  paid_out: number | null;
+  deductions: PayoutLine[];
+  deductions_total: number | null;
+  expected_payout: number | null;
+  difference: number | null;
+  adds_up: boolean | null;
+  questions_to_ask: string[];
+  warnings: string[];
+}

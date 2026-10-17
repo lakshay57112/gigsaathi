@@ -43,6 +43,15 @@ def list_entries(db: sqlite3.Connection, device_id: str, limit: int) -> list[Ear
     return [_to_out(r) for r in rows]
 
 
+def entries_between(db: sqlite3.Connection, device_id: str, start: date, end: date) -> list[EarningsOut]:
+    rows = db.execute(
+        "SELECT * FROM earnings WHERE device_id = ? AND entry_date BETWEEN ? AND ? "
+        "ORDER BY entry_date ASC, id ASC",
+        (device_id, start.isoformat(), end.isoformat()),
+    ).fetchall()
+    return [_to_out(r) for r in rows]
+
+
 def delete_entry(db: sqlite3.Connection, device_id: str, entry_id: int) -> bool:
     cursor = db.execute("DELETE FROM earnings WHERE id = ? AND device_id = ?", (entry_id, device_id))
     db.commit()

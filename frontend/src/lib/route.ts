@@ -9,6 +9,7 @@ export interface RouteDef {
 export const ROUTES: RouteDef[] = [
   { path: "/", label: "nav_dashboard" },
   { path: "/earnings", label: "nav_earnings" },
+  { path: "/statement", label: "nav_statement" },
   { path: "/assistant", label: "nav_assistant" },
   { path: "/safety", label: "nav_safety" },
   { path: "/documents", label: "nav_documents" },

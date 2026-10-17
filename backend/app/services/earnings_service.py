@@ -6,7 +6,7 @@ Net earnings = gross earnings - work-related expenses.
 from dataclasses import dataclass
 from datetime import date, timedelta
 
-from ..schemas import DayBreakdown, SummaryOut, Totals, WeekInsights
+from ..schemas import DayBreakdown, EarningsOut, MonthRow, StatementOut, SummaryOut, Totals, WeekInsights
 
 WEEK_DAYS = 7
 LOW_PAY_RATIO = 0.5  # a day is "low" if its net per hour is below half the week's average
@@ -95,4 +95,39 @@ def build_summary(week_rows: list[DayRow], all_time: Totals, today: date) -> Sum
         all_time=all_time,
         daily=daily,
         week_insights=_week_insights(daily, week),
+    )
+
+
+def build_statement(entries: list[EarningsOut], start: date, end: date, today: date) -> StatementOut:
+    """Income statement for a period: overall totals plus one row per calendar month."""
+    ordered = sorted(entries, key=lambda e: (e.entry_date, e.id))
+    rows = [DayRow(e.entry_date, e.gross, e.expenses, e.hours) for e in ordered]
+
+    by_month: dict[str, list[DayRow]] = {}
+    for row in rows:
+        by_month.setdefault(row.entry_date.strftime("%Y-%m"), []).append(row)
+
+    months = []
+    for key in sorted(by_month):
+        month_rows = by_month[key]
+        t = _totals(month_rows)
+        months.append(
+            MonthRow(
+                month=key,
+                gross=t.gross,
+                expenses=t.expenses,
+                net=t.net,
+                hours=t.hours,
+                days_worked=len({r.entry_date for r in month_rows}),
+            )
+        )
+
+    return StatementOut(
+        start=start,
+        end=end,
+        generated_on=today,
+        totals=_totals(rows),
+        days_worked=len({r.entry_date for r in rows}),
+        months=months,
+        entries=ordered,
     )

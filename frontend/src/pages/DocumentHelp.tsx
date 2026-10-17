@@ -1,14 +1,17 @@
 import { useState, type FormEvent } from "react";
 import { VoiceButton } from "../components/VoiceButton";
+import { PayoutResult } from "../components/PayoutResult";
 import { AiNote, AiText, Alert, Button, Card, ErrorBox, PageTitle, Spinner, TextAreaField } from "../components/ui";
 import { useApp } from "../context";
 import { api, ApiError } from "../lib/api";
 import { localISODate } from "../lib/format";
-import { buildGrievancePrefill, savePrefill } from "../lib/prefill";
+import { buildGrievancePrefill, buildPayoutPrefill, savePrefill } from "../lib/prefill";
 import { navigate } from "../lib/route";
-import type { DocumentExplanation, LabeledValue } from "../lib/types";
+import type { DocumentExplanation, LabeledValue, PayoutCheck } from "../lib/types";
 
 const MIN_CHARS = 20;
+
+type Mode = "explain" | "payout";
 
 function Pairs({ title, items }: { title: string; items: LabeledValue[] }) {
   if (items.length === 0) return null;
@@ -47,7 +50,9 @@ export default function DocumentHelp() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
   const [result, setResult] = useState<DocumentExplanation | null>(null);
+  const [payout, setPayout] = useState<PayoutCheck | null>(null);
   const [resultLanguage, setResultLanguage] = useState(language);
+  const [mode, setMode] = useState<Mode>("explain");
 
   const trimmed = text.trim();
   const tooShort = trimmed.length < MIN_CHARS;
@@ -58,8 +63,10 @@ export default function DocumentHelp() {
     setLoading(true);
     setError(null);
     setResult(null);
+    setPayout(null);
     try {
-      setResult(await api.explainDocument(trimmed, language));
+      if (mode === "payout") setPayout(await api.checkPayout(trimmed, language));
+      else setResult(await api.explainDocument(trimmed, language));
       setResultLanguage(language);
     } catch (e) {
       setError(e instanceof ApiError ? e : new ApiError(0, "error", "Something went wrong."));
@@ -69,18 +76,43 @@ export default function DocumentHelp() {
   }
 
   function draftComplaint() {
-    if (!result) return;
-    savePrefill(buildGrievancePrefill(result, localISODate()));
+    if (payout) savePrefill(buildPayoutPrefill(payout));
+    else if (result) savePrefill(buildGrievancePrefill(result, localISODate()));
+    else return;
     navigate("/grievance");
+  }
+
+  function changeMode(next: Mode) {
+    setMode(next);
+    setResult(null);
+    setPayout(null);
+    setError(null);
   }
 
   return (
     <>
-      <PageTitle intro={t("doc_intro")}>{t("doc_title")}</PageTitle>
+      <PageTitle intro={mode === "payout" ? t("po_intro") : t("doc_intro")}>{t("doc_title")}</PageTitle>
+
+      <fieldset className="mb-4">
+        <legend className="mb-1 text-sm font-medium">{t("doc_modeLabel")}</legend>
+        <div className="flex flex-wrap gap-x-6">
+          {(
+            [
+              ["explain", "doc_modeExplain"],
+              ["payout", "doc_modePayout"],
+            ] as const
+          ).map(([value, label]) => (
+            <label key={value} className="flex min-h-11 items-center gap-2">
+              <input type="radio" name="mode" className="size-5 accent-green-700" checked={mode === value} onChange={() => changeMode(value)} />
+              {t(label)}
+            </label>
+          ))}
+        </div>
+      </fieldset>
 
       <form onSubmit={submit} className="space-y-4">
         <TextAreaField
-          label={t("doc_label")}
+          label={mode === "payout" ? t("po_label") : t("doc_label")}
           hint={t("doc_privacy")}
           rows={9}
           maxLength={meta.max_document_chars}
@@ -97,13 +129,14 @@ export default function DocumentHelp() {
           </p>
         </div>
         <Button type="submit" disabled={tooShort || loading}>
-          {loading ? t("explaining") : t("doc_submit")}
+          {loading ? (mode === "payout" ? t("po_checking") : t("explaining")) : mode === "payout" ? t("po_submit") : t("doc_submit")}
         </Button>
       </form>
 
       <div className="mt-6" aria-live="polite">
-        {loading && <Spinner label={t("explaining")} />}
+        {loading && <Spinner label={mode === "payout" ? t("po_checking") : t("explaining")} />}
         {error && <ErrorBox error={error} />}
+        {payout && <PayoutResult result={payout} language={resultLanguage} onComplain={draftComplaint} />}
         {result && (
           <Card>
             <div lang={resultLanguage} className="space-y-5">
@@ -132,7 +165,7 @@ export default function DocumentHelp() {
           </Card>
         )}
       </div>
-      {!result && <div className="mt-4"><AiNote /></div>}
+      {!result && !payout && <div className="mt-4"><AiNote /></div>}
     </>
   );
 }
