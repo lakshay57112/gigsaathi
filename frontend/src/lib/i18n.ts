@@ -67,6 +67,7 @@ const en = {
   ai_chip3: "What documents should I keep ready for a welfare scheme?",
   ai_chip4: "Help me write a complaint about an unpaid delivery incentive.",
   voice_start: "Speak your question",
+  voice_document: "Speak the notice instead of typing",
   voice_stop: "Stop listening",
   voice_listening: "Listening…",
 
@@ -214,6 +215,7 @@ const hi: Partial<Record<TextKey, string>> = {
   ai_chip3: "किसी कल्याण योजना के लिए कौन से दस्तावेज़ तैयार रखूँ?",
   ai_chip4: "बिना मिले डिलीवरी इंसेंटिव की शिकायत लिखने में मदद करें।",
   voice_start: "बोलकर सवाल पूछें",
+  voice_document: "टाइप करने की जगह नोटिस बोलें",
   voice_stop: "सुनना बंद करें",
   voice_listening: "सुन रहे हैं…",
 

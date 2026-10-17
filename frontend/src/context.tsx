@@ -1,13 +1,14 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { api } from "./lib/api";
 import { translate, type TextKey } from "./lib/i18n";
+import { browserStorage, LANGUAGE_KEY, needsLanguageChoice, readStoredLanguage } from "./lib/languagePref";
 import type { Meta } from "./lib/types";
-
-const LANGUAGE_KEY = "gs.language";
 
 interface AppState {
   meta: Meta;
   language: string;
+  /** True until the worker has picked a language on the welcome screen. */
+  needsLanguage: boolean;
   setLanguage: (code: string) => void;
   speechLocale: string;
   t: (key: TextKey) => string;
@@ -16,17 +17,14 @@ interface AppState {
 const AppContext = createContext<AppState | null>(null);
 
 function readLanguage(): string {
-  try {
-    return window.localStorage.getItem(LANGUAGE_KEY) ?? "en";
-  } catch {
-    return "en";
-  }
+  return readStoredLanguage(browserStorage()) ?? "en";
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [meta, setMeta] = useState<Meta | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [language, setLanguageState] = useState(readLanguage);
+  const [needsLanguage, setNeedsLanguage] = useState(() => needsLanguageChoice(browserStorage()));
 
   useEffect(() => {
     api.getMeta().then(setMeta, (e: Error) => setError(e.message));
@@ -34,6 +32,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const setLanguage = useCallback((code: string) => {
     setLanguageState(code);
+    setNeedsLanguage(false);
     try {
       window.localStorage.setItem(LANGUAGE_KEY, code);
     } catch {
@@ -53,11 +52,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       meta && {
         meta,
         language: activeLanguage,
+        needsLanguage,
         setLanguage,
         speechLocale: meta.languages.find((l) => l.code === activeLanguage)?.speech_locale ?? "en-IN",
         t: (key) => translate(activeLanguage, key),
       },
-    [meta, activeLanguage, setLanguage],
+    [meta, activeLanguage, needsLanguage, setLanguage],
   );
 
   if (error) {

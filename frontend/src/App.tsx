@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { LanguageWelcome } from "./components/LanguageWelcome";
 import { useApp } from "./context";
 import { ROUTES, useRoute } from "./lib/route";
 import Assistant from "./pages/Assistant";
@@ -86,7 +87,7 @@ function Brand() {
 }
 
 export default function App() {
-  const { t, meta } = useApp();
+  const { t, meta, needsLanguage } = useApp();
   const route = useRoute();
   const [menuOpen, setMenuOpen] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
@@ -106,6 +107,8 @@ export default function App() {
     }
     setMenuOpen(false);
   }, [route]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (needsLanguage) return <LanguageWelcome />;
 
   return (
     <div className="min-h-dvh md:flex">

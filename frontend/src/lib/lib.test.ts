@@ -4,6 +4,7 @@ import { deleteDraft, loadDrafts, MAX_DRAFTS, saveDraft } from "./drafts";
 import { formatINR, formatShortDate, localISODate } from "./format";
 import { englishKeys, hindiKeys, translate } from "./i18n";
 import { buildGrievancePrefill, guessIssueType, parseAmount, parseIncidentDate } from "./prefill";
+import { LANGUAGE_KEY, needsLanguageChoice, readStoredLanguage } from "./languagePref";
 import { parseHash } from "./route";
 import { buildWeeklySummary } from "./summary";
 import { cleanAiText } from "./text";
@@ -189,5 +190,42 @@ describe("buildWeeklySummary", () => {
 
   it("says so when nothing is recorded", () => {
     expect(buildWeeklySummary({ ...summary, week: { ...summary.week, entries: 0 } })).toMatch(/No earnings/);
+  });
+});
+
+describe("language choice", () => {
+  const fakeStorage = (initial: Record<string, string> = {}) => {
+    const data = { ...initial };
+    return {
+      getItem: (k: string) => data[k] ?? null,
+      setItem: (k: string, v: string) => {
+        data[k] = v;
+      },
+    };
+  };
+
+  it("asks on the first visit and not after a language is saved", () => {
+    expect(needsLanguageChoice(fakeStorage())).toBe(true);
+    expect(needsLanguageChoice(fakeStorage({ [LANGUAGE_KEY]: "ta" }))).toBe(false);
+  });
+
+  it("reads back the saved language", () => {
+    expect(readStoredLanguage(fakeStorage({ [LANGUAGE_KEY]: "ta" }))).toBe("ta");
+    expect(readStoredLanguage(fakeStorage())).toBeNull();
+    expect(readStoredLanguage(null)).toBeNull();
+  });
+
+  it("skips the screen when storage is blocked, since the answer could not be remembered", () => {
+    const blocked = {
+      getItem: () => {
+        throw new Error("blocked");
+      },
+      setItem: () => {
+        throw new Error("blocked");
+      },
+    };
+    expect(needsLanguageChoice(blocked)).toBe(false);
+    expect(needsLanguageChoice(null)).toBe(false);
+    expect(readStoredLanguage(blocked)).toBeNull();
   });
 });

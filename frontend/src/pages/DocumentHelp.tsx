@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { VoiceButton } from "../components/VoiceButton";
 import { AiNote, AiText, Alert, Button, Card, ErrorBox, PageTitle, Spinner, TextAreaField } from "../components/ui";
 import { useApp } from "../context";
 import { api, ApiError } from "../lib/api";
@@ -86,9 +87,15 @@ export default function DocumentHelp() {
           value={text}
           onChange={(e) => setText(e.target.value)}
         />
-        <p className="text-sm text-neutral-600">
-          {text.length} / {meta.max_document_chars}
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <VoiceButton
+            label={t("voice_document")}
+            onText={(spoken) => setText((current) => (current ? `${current} ${spoken}` : spoken).slice(0, meta.max_document_chars))}
+          />
+          <p className="text-sm text-neutral-600">
+            {text.length} / {meta.max_document_chars}
+          </p>
+        </div>
         <Button type="submit" disabled={tooShort || loading}>
           {loading ? t("explaining") : t("doc_submit")}
         </Button>

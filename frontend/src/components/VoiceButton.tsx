@@ -29,7 +29,7 @@ function getRecognition(): RecognitionConstructor | null {
   return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
 }
 
-export function VoiceButton({ onText }: { onText: (text: string) => void }) {
+export function VoiceButton({ onText, label }: { onText: (text: string) => void; label?: string }) {
   const { t, speechLocale } = useApp();
   const [listening, setListening] = useState(false);
   const recognition = useRef<Recognition | null>(null);
@@ -79,7 +79,7 @@ export function VoiceButton({ onText }: { onText: (text: string) => void }) {
         <rect x="9" y="3" width="6" height="11" rx="3" />
         <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
       </svg>
-      <span>{listening ? t("voice_listening") : t("voice_start")}</span>
+      <span>{listening ? t("voice_listening") : (label ?? t("voice_start"))}</span>
       <span className="sr-only">{listening ? t("voice_stop") : ""}</span>
     </button>
   );
